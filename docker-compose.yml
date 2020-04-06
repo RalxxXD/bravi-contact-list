@@ -1,0 +1,47 @@
+version: '3.7'
+networks:
+  backend:
+    name: app
+    driver: bridge
+volumes:
+  postgres-data:
+
+services:
+  contactlistapp:
+    image:  contactlistapp:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: contactlistapp
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+    depends_on:
+      - db
+    # Service health check
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: sh run.sh
+
+  db:
+    image:  postgres:12
+    container_name: postgresql-db
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER:  postgres
+      POSTGRES_PASSWORD:  postgres
+      POSTGRES_DB: contact_list
+      PGDATA: /var/lib/postgresql/data/pqdata
+    healthcheck:
+      test: pg_isredy -U postgres
+      interval: 1m
+      timeout: 10s
+      retries: 2
